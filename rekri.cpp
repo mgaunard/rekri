@@ -100,7 +100,8 @@ struct irc_connection
     }
     last_activity = time(0);
 
-    enqueue(boost::str(boost::format("NICK " NAMESTYLE) % randn(1000)));
+    nick = boost::str(boost::format(NAMESTYLE) % randn(1000));
+    enqueue("NICK " + nick);
     enqueue("USER rekri 0 * :rekri relaying client");
     for(std::set<std::string>::iterator it = joined.begin(); it != joined.end(); ++it)
       write_queue.push_front("JOIN + " + *it);
