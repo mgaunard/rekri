@@ -102,7 +102,7 @@ struct irc_connection
 
     nick = boost::str(boost::format(NAMESTYLE) % randn(1000));
     for(std::set<std::string>::iterator it = joined.begin(); it != joined.end(); ++it)
-      write_queue.push_front("JOIN + " + *it);
+      write_queue.push_front("JOIN " + *it);
     write_queue.push_front("USER rekri 0 * :rekri relaying client");
     write_queue.push_front("NICK " + nick);
   }
