@@ -257,11 +257,11 @@ struct message_grammar : boost::spirit::qi::grammar<const char*, boost::spirit::
     using namespace boost::spirit;
 
     root  = qi::lit('{')
-            >> '"' >> "to" >> '"' >> ':' >> '"' >> qi::no_skip[channel] >> '"' >> ','
+            >> '"' >> "to" >> '"' >> ':' >> ( ('"' >> qi::no_skip[channel] >> '"') | (qi::lit('[') >> '"' >> qi::no_skip[channel] >> '"' >> ']') ) >> ','
             >> '"' >> "privmsg" >> '"' >> ':' >> '"' >> qi::no_skip[content] >> '"'
             >> '}'
           ;
-    
+
     channel = qi::lit("irc://") >> server >> '/' >> +(qi::char_ - qi::char_('"') - boost::spirit::standard::space);
     server  = +(qi::char_ - qi::char_("/:") - boost::spirit::standard::space) >> port;
     port   %= (':' >> qi::int_)
