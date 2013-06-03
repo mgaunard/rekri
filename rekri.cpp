@@ -297,9 +297,12 @@ void read_irker_packet(int fd)
   }
   
   message msg;
-  if(!boost::spirit::qi::phrase_parse((const char*)buffer, (const char*)buffer+n, message_grammar(), boost::spirit::standard::space, msg))
+  message_grammar g;
+  if(!boost::spirit::qi::phrase_parse((const char*)buffer, (const char*)buffer+n, g, boost::spirit::standard::space, msg))
   {
     std::cout << "invalid message" << std::endl;
+    std::cout.write(buffer, n);
+    std::cout << std::endl;
     return;
   }
   
@@ -348,6 +351,8 @@ int main()
     for(size_t i=0; i!=connected_servers.size(); ++i)
     {
       int ifd = connected_servers[i].fd;
+      if(ifd == -1)
+        continue;
       time_t timeo = (now - connected_servers[i].last_activity) >= TIMEOUT ? 0 : (TIMEOUT - (now - connected_servers[i].last_activity)); 
       maxfd = ifd > maxfd ? ifd : maxfd;
       min_timeo = timeo < min_timeo ? timeo : min_timeo;
@@ -366,10 +371,13 @@ int main()
     for(size_t i=0; i!=connected_servers.size(); ++i)
     {
       int ifd = connected_servers[i].fd;
-      if(FD_ISSET(ifd, &readfds))
-        connected_servers[i].read();
-      if(FD_ISSET(ifd, &writefds))
-        connected_servers[i].write();
+      if(ifd != -1)
+      {
+        if(FD_ISSET(ifd, &readfds))
+          connected_servers[i].read();
+        if(FD_ISSET(ifd, &writefds))
+          connected_servers[i].write();
+      }
 
       // make sure everyone is connected
       connected_servers[i].connect();
