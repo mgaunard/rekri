@@ -36,7 +36,7 @@ BOOST_FUSION_DEFINE_STRUCT(, irc_server_channel,
 );
 
 BOOST_FUSION_DEFINE_STRUCT(, message,
-    (irc_server_channel, channel)
+    (std::vector<irc_server_channel>, channel)
     (std::string, content)
 );
 
@@ -258,10 +258,16 @@ struct message_grammar : boost::spirit::qi::grammar<const char*, boost::spirit::
     using namespace boost::spirit;
 
     root  = qi::lit('{')
-            >> '"' >> "to" >> '"' >> ':' >> ( ('"' >> qi::no_skip[channel] >> '"') | (qi::lit('[') >> '"' >> qi::no_skip[channel] >> '"' >> ']') ) >> ','
+            >> '"' >> "to" >> '"' >> ':' >> channels >> ','
             >> '"' >> "privmsg" >> '"' >> ':' >> '"' >> qi::no_skip[content] >> '"'
             >> '}'
           ;
+
+    channels = channel_str
+             | (  '[' >> channel_str % ',' >> ']' )
+             ;
+
+    channel_str = '"' >> qi::no_skip[channel] >> '"';
 
     channel = qi::lit("irc://") >> server >> '/' >> +(qi::char_ - qi::char_('"') - boost::spirit::standard::space);
     server  = +(qi::char_ - qi::char_("/:") - boost::spirit::standard::space) >> port;
@@ -274,8 +280,10 @@ struct message_grammar : boost::spirit::qi::grammar<const char*, boost::spirit::
                   | ( qi::char_ - qi::char_('"')  )
                   ;
   }
-  
+
   boost::spirit::qi::rule<const char*, boost::spirit::standard::space_type, message()> root;
+  boost::spirit::qi::rule<const char*, boost::spirit::standard::space_type, std::vector<irc_server_channel>()> channels;
+  boost::spirit::qi::rule<const char*, boost::spirit::standard::space_type, irc_server_channel()> channel_str;
   boost::spirit::qi::rule<const char*, irc_server_channel()> channel;
   boost::spirit::qi::rule<const char*, irc_server()> server;
   boost::spirit::qi::rule<const char*, int()> port;
