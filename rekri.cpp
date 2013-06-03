@@ -87,7 +87,8 @@ struct irc_connection
       return;
     }
 
-    struct sockaddr_in addr = {};
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof addr);
     addr.sin_family = AF_INET;
     addr.sin_port = htons(server.port);
     memcpy(&addr.sin_addr, host->h_addr, 4);
@@ -144,7 +145,7 @@ struct irc_connection
     std::string& s = write_queue.front();
     std::cout << "write " << s << std::endl;
     ssize_t n = ::write(fd, (s + "\r\n").c_str(), s.size() + 2);
-    if(n != s.size() + 2)
+    if(n < 0 || (size_t)n != s.size() + 2)
     {
       perror("write");
       close();
@@ -327,7 +328,8 @@ int main()
     exit(1);
   }
 
-  struct sockaddr_in addr = {};
+  struct sockaddr_in addr;
+  memset(&addr, 0, sizeof addr);
   addr.sin_family = AF_INET;
   addr.sin_port = htons(PORT);
   if(bind(fd, (struct sockaddr*)&addr, sizeof addr) < 0)
@@ -361,7 +363,8 @@ int main()
         FD_SET(ifd, &writefds);
     }
 
-    struct timeval tv = {};
+    struct timeval tv;
+    memset(&addr, 0, sizeof tv);
     tv.tv_sec = min_timeo;
     ::select(maxfd+1, &readfds, &writefds, NULL, &tv);
 
