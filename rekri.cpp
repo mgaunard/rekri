@@ -123,20 +123,20 @@ struct irc_connection
     if(joined.insert(channel).second)
       enqueue("JOIN " + channel);
   }
-  
+
   void enqueue(std::string const& s)
   {
     connect();
     std::cout << "enqueue " << s << std::endl;
     write_queue.push_back(s);
   }
-  
+
   void privmsg(std::string const& channel, std::string const& msg)
   {
     join(channel);
     enqueue("PRIVMSG " + channel + " :" + msg);
   }
-  
+
   void write()
   {
     if(write_queue.empty())
@@ -205,7 +205,7 @@ struct irc_connection
       swap_dropped = true;
     }
   }
-  
+
   void read_message(const char* msg)
   {
     std::cout << "received " << msg << std::endl;
@@ -234,11 +234,11 @@ std::vector<irc_connection> connected_servers;
 irc_connection& connection_by_server(irc_server const& server)
 {
   irc_connection* connection = 0;
-  
+
   for(size_t i=0; i!=connected_servers.size(); ++i)
     if(connected_servers[i].server == server)
       connection = &connected_servers[i];
-  
+
   if(!connection)
   {
     connected_servers.push_back(irc_connection(server));
@@ -296,7 +296,7 @@ void read_irker_packet(int fd)
     perror("recvfrom");
     return;
   }
-  
+
   message msg;
   message_grammar g;
   if(!boost::spirit::qi::phrase_parse((const char*)buffer, (const char*)buffer+n, g, boost::spirit::standard::space, msg))
@@ -306,21 +306,22 @@ void read_irker_packet(int fd)
     std::cout << std::endl;
     return;
   }
-  
-  connection_by_server(msg.channel.server).privmsg(msg.channel.channel, msg.content);
+
+  for(std::vector<irc_server_channel>::const_iterator it = msg.channel.begin(); it != msg.channel.end(); ++it)
+    connection_by_server(it->server).privmsg(it->channel, msg.content);
 }
 
 int main()
 {
   srand(time(0));
-  
+
   int fd = socket(PF_INET, SOCK_DGRAM, 0);
   if(fd < 0)
   {
     perror("UDP socket");
     exit(1);
   }
-  
+
   int yes = 1;
   if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes) < 0)
   {
@@ -345,17 +346,17 @@ int main()
     time_t min_timeo = TIMEOUT; // minimum amount of time in which a connection will time out
     fd_set readfds;
     fd_set writefds;
-    
+
     FD_ZERO(&readfds);
     FD_ZERO(&writefds);
-    
+
     FD_SET(fd, &readfds);
     for(size_t i=0; i!=connected_servers.size(); ++i)
     {
       int ifd = connected_servers[i].fd;
       if(ifd == -1)
         continue;
-      time_t timeo = (now - connected_servers[i].last_activity) >= TIMEOUT ? 0 : (TIMEOUT - (now - connected_servers[i].last_activity)); 
+      time_t timeo = (now - connected_servers[i].last_activity) >= TIMEOUT ? 0 : (TIMEOUT - (now - connected_servers[i].last_activity));
       maxfd = ifd > maxfd ? ifd : maxfd;
       min_timeo = timeo < min_timeo ? timeo : min_timeo;
       FD_SET(ifd, &readfds);
