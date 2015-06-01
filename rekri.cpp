@@ -301,7 +301,8 @@ void read_irker_packet(int fd)
   ssize_t n = recvfrom(fd, buffer, sizeof buffer, 0, (struct sockaddr*)&addr, &addr_size);
   if(n < 0)
   {
-    perror("recvfrom");
+    if (errno != EAGAIN)
+      perror("recvfrom");
     return;
   }
 
@@ -344,6 +345,15 @@ int main()
   if(bind(fd, (struct sockaddr*)&addr, sizeof addr) < 0)
   {
     perror("bind");
+    exit(1);
+  }
+
+  int flags = fcntl(fd, F_GETFL, 0);
+  if (flags < 0)
+      flags = 0;
+  if(fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
+  {
+    perror("fcntl O_NONBLOCK");
     exit(1);
   }
 
